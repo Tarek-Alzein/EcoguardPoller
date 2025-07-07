@@ -10,8 +10,8 @@ await Host.CreateDefaultBuilder(args)
         var env = context.HostingEnvironment;
 
         config.SetBasePath(Directory.GetCurrentDirectory());
-        config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-        config.AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: false);
+        config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+        .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: false);
         config.AddEnvironmentVariables();
     })
     .ConfigureServices((context, services) =>

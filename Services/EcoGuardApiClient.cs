@@ -1,22 +1,22 @@
 ﻿using EcoguardPoller.Models;
+
+using System.Net;
 using System.Net.Http.Json;
 
 namespace EcoguardPoller.Services
 {
-    internal class EcoGuardApiClient
+    internal class EcoGuardApiClient(AppConfig appConfig)
     {
-        private readonly EcoGuardConfig _config;
-        private readonly HttpClient _client = new();
         private const string BaseUrl = "https://integration.ecoguard.se";
 
-        public EcoGuardApiClient(AppConfig appConfig)
-        {
-            _config = appConfig.EcoGuard;
-        }
+        private readonly EcoGuardConfig _config = appConfig.EcoGuard;
+        private readonly HttpClient _client = new();
 
-        public async Task<string> GetTokenAsync()
+        private EcoGuardToken? _cachedToken;
+
+        public async Task<EcoGuardToken> RequestNewTokenAsync()
         {
-            var data = new Dictionary<string, string>
+            var request = new Dictionary<string, string>
             {
                 ["grant_type"] = "password",
                 ["username"] = _config.Username,
@@ -24,21 +24,62 @@ namespace EcoguardPoller.Services
                 ["domain"] = _config.DomainCode
             };
 
-            var response = await _client.PostAsync($"{BaseUrl}/token", new FormUrlEncodedContent(data));
+            var response = await _client.PostAsync($"{BaseUrl}/token", new FormUrlEncodedContent(request));
             response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
-            return json["access_token"]?.ToString() ?? throw new Exception("Token missing in response.");
+            var result = await response.Content.ReadFromJsonAsync<TokenResponse>();
+
+            if (result == null)
+            {
+                throw new Exception("Failed to parse token response from EcoGuard");
+            }
+
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var expiresAt = now + result.ExpiresIn - 60; // Buffer 1 min
+
+            Console.WriteLine($"✅ Received new token, valid until {DateTimeOffset.FromUnixTimeSeconds(expiresAt)}");
+
+            return new EcoGuardToken
+            {
+                AccessToken = result.AccessToken,
+                ExpiresAt = expiresAt
+            };
         }
+
+        public async Task<string> GetTokenAsync(bool forceRefresh = false)
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            if (!forceRefresh && _cachedToken != null && _cachedToken.ExpiresAt > now)
+            {
+                Console.WriteLine($"✅ Using cached EcoGuard token (expires at {DateTimeOffset.FromUnixTimeSeconds(_cachedToken.ExpiresAt)})");
+                return _cachedToken.AccessToken;
+            }
+
+            // Otherwise fetch a new token
+            Console.WriteLine("🔑 Requesting new EcoGuard token from server...");
+            _cachedToken = await RequestNewTokenAsync();
+
+            return _cachedToken.AccessToken;
+        }
+
 
         public async Task<double> GetLastValAsync(string token, int from)
         {
             var url = $"{BaseUrl}/api/{_config.DomainCode}/data?nodeid={_config.NodeId}&interval=H&utl=ELEC[lastval]&from={from}";
+
             _client.DefaultRequestHeaders.Clear();
             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
             _client.DefaultRequestHeaders.Add("x-version", "1");
 
             var response = await _client.GetAsync(url);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                Console.WriteLine("⚠️ EcoGuard returned 403 Unauthorized.");
+                throw new UnauthorizedAccessException();
+            }
+
             response.EnsureSuccessStatusCode();
 
             var data = await response.Content.ReadFromJsonAsync<List<EcoGuardDeviceResult>>();

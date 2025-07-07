@@ -22,7 +22,7 @@
         public int Port { get; set; } = 1883;
         public string Username { get; set; } = "";
         public string Password { get; set; } = "";
-        public string Topic { get; set; } = "home/energy/ecoguard/consumption";
+        public string Topic { get; set; } = "ecoguard/consumption";
     }
     public class DatabaseConfig
     {

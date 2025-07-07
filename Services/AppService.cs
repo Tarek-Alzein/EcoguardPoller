@@ -6,18 +6,15 @@ namespace EcoguardPoller.Services
 {
     internal class AppService : BackgroundService
     {
-        private readonly AppConfig _config;
         private readonly EcoGuardApiClient _ecoGuard;
         private readonly MeterReadingStore _store;
         private readonly MqttPublisher _mqtt;
 
         public AppService(
-    AppConfig config,
     EcoGuardApiClient ecoGuard,
     MeterReadingStore store,
     MqttPublisher mqtt)
         {
-            _config = config;
             _ecoGuard = ecoGuard;
             _store = store;
             _mqtt = mqtt;
@@ -25,47 +22,96 @@ namespace EcoguardPoller.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            Console.WriteLine("✅ EcoGuard Poller Service started");
+            Console.WriteLine("✅ EcoGuard Poller Service started and waiting for polling interval.");
+
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    Console.WriteLine($"🕒 Polling job started at {DateTime.Now}");
+
+                    await RunPollOnceAsync(stoppingToken);
+
+                    Console.WriteLine($"✅ Polling job completed at {DateTime.Now}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ ERROR during polling cycle: {ex.GetType().Name} - {ex.Message}");
+                }
+
+                // Wait for next interval (1 hour)
+                Console.WriteLine("⏳ Sleeping for 1 hour until next poll...");
+                try
+                {
+                    await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                }
+                catch (TaskCanceledException)
+                {
+                    // Stop was requested while sleeping
+                    break;
+                }
+            }
+
+            Console.WriteLine("🛑 EcoGuard Poller Service is stopping due to cancellation request.");
+        }
+
+        private async Task RunPollOnceAsync(CancellationToken stoppingToken)
+        {
+            var (start, _) = EcoGuardApiClient.GetLastHourWindow();
+            Console.WriteLine($"📌 Requesting reading for time boundary: {start}");
+
+            string token;
 
             try
             {
-                // Step 1: Authenticate and get token
-                Console.WriteLine("🔑 Getting OAuth token...");
-                var token = await _ecoGuard.GetTokenAsync();
-
-                // Step 2: Determine last hour window
-                var (start, _) = EcoGuardApiClient.GetLastHourWindow();
-                Console.WriteLine($"🕒 Fetching reading for time boundary: {start}");
-
-                // Step 3: Get cumulative reading
-                var cumulative = await _ecoGuard.GetLastValAsync(token, start);
-                Console.WriteLine($"📈 Current cumulative reading: {cumulative} kWh");
-
-                // Step 4: Load previous reading
-                var previous = _store.GetLastReading();
-                if (previous != null)
-                {
-                    var delta = cumulative - previous.Value;
-                    Console.WriteLine($"✅ Delta (this hour's usage): {delta} kWh");
-
-                    // Step 5: Publish to MQTT
-                    await _mqtt.PublishConsumptionAsync(delta);
-                }
-                else
-                {
-                    Console.WriteLine("⚠️ No previous reading found - skipping delta calculation this time.");
-                }
-
-                // Step 6: Store new reading
-                _store.SaveReading(start, cumulative);
-                Console.WriteLine("💾 New cumulative reading saved.");
-
-                Console.WriteLine("✅ EcoGuard Poller Service completed successfully.");
+                // First attempt with cached token
+                token = await _ecoGuard.GetTokenAsync();
+                await FetchAndStoreReading(token, start, stoppingToken);
             }
-            catch (Exception ex)
+            catch (UnauthorizedAccessException)
             {
-                Console.WriteLine($"❌ ERROR: {ex.GetType().Name} - {ex.Message}");
+                Console.WriteLine("⚠️ Unauthorized! Token expired or invalid. Refreshing and retrying...");
+
+                // Refresh token and retry once
+                token = await _ecoGuard.GetTokenAsync(forceRefresh: true);
+
+                try
+                {
+                    await FetchAndStoreReading(token, start, stoppingToken);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    Console.WriteLine("❌ Still getting Unauthorized after refreshing token. Giving up this cycle.");
+                }
             }
         }
+
+        private async Task FetchAndStoreReading(string token, int from, CancellationToken stoppingToken)
+        {
+            // Get cumulative reading from EcoGuard
+            var cumulative = await _ecoGuard.GetLastValAsync(token, from);
+            Console.WriteLine($"📈 Current cumulative reading: {cumulative} kWh");
+
+            // Load previous reading from SQLite
+            var previous = _store.GetLastReading();
+
+            if (previous != null)
+            {
+                var delta = cumulative - previous.Value;
+                Console.WriteLine($"✅ Calculated delta for this hour: {delta} kWh");
+
+                // Publish delta to MQTT
+                await _mqtt.PublishConsumptionAsync(delta);
+            }
+            else
+            {
+                Console.WriteLine("⚠️ No previous reading found in DB. Skipping delta calculation this time.");
+            }
+
+            // Save new cumulative reading
+            _store.SaveReading(from, cumulative);
+            Console.WriteLine("💾 New cumulative reading saved to SQLite.");
+        }
+
     }
 }
