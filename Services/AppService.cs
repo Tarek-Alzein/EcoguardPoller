@@ -100,6 +100,12 @@ namespace EcoguardPoller.Services
 
             if (previous != null)
             {
+                if (Math.Abs(cumulative - previous.Value) < 0.0001)
+                {
+                    Console.WriteLine("ℹ️ Reading has not changed since last poll. Skipping publish.");
+                    return;
+                }
+
                 var delta = cumulative - previous.Value;
                 Console.WriteLine($"✅ Calculated delta for this hour: {delta} kWh");
 
