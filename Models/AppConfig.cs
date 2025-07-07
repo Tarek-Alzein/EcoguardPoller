@@ -5,8 +5,7 @@
         public EcoGuardConfig EcoGuard { get; set; } = new();
         public MqttConfig MQTT { get; set; } = new();
         public DatabaseConfig Database { get; set; } = new();
-
-
+        public double PollIntervalHours { get; set; } = 1;
     }
     public class EcoGuardConfig
     {

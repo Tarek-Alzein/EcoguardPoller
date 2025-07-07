@@ -6,15 +6,18 @@ namespace EcoguardPoller.Services
 {
     internal class AppService : BackgroundService
     {
+        private readonly AppConfig _appConfig;
         private readonly EcoGuardApiClient _ecoGuard;
         private readonly MeterReadingStore _store;
         private readonly MqttPublisher _mqtt;
 
         public AppService(
+            AppConfig config,
     EcoGuardApiClient ecoGuard,
     MeterReadingStore store,
     MqttPublisher mqtt)
         {
+            _appConfig = config;
             _ecoGuard = ecoGuard;
             _store = store;
             _mqtt = mqtt;
@@ -40,10 +43,10 @@ namespace EcoguardPoller.Services
                 }
 
                 // Wait for next interval (1 hour)
-                Console.WriteLine("⏳ Sleeping for 1 hour until next poll...");
+                Console.WriteLine($"⏳ Sleeping for {_appConfig.PollIntervalHours} hour until next poll...");
                 try
                 {
-                    await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                    await Task.Delay(TimeSpan.FromHours(_appConfig.PollIntervalHours), stoppingToken);
                 }
                 catch (TaskCanceledException)
                 {

@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 # Environment config
 appsettings.Development.json
+
+# Sqlite db
+*.db
