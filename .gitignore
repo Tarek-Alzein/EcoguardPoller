@@ -366,4 +366,4 @@ FodyWeavers.xsd
 appsettings.Development.json
 
 # Sqlite db
-*.db
+/consumption.db
