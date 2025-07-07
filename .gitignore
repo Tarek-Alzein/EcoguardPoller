@@ -367,3 +367,4 @@ appsettings.Development.json
 
 # Sqlite db
 /consumption.db
+*.tar
