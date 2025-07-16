@@ -2,16 +2,16 @@
 <Container version="2">
 	<Name>ecoguardpoller</Name>
 	<Repository>ecoguardpoller:latest</Repository>
-	<!--<Registry>https://hub.docker.com/r/yourdockerhub/your-app-repo/</Registry>-->
 	<Registry>https://github.com/Tarek-Alzein/EcoguardPoller</Registry>
-	<Network>Bridge</Network>
+	<Network>bridge</Network>
 	<MyIP/>
 	<Shell>sh</Shell>
 	<Privileged>false</Privileged>
 	<Support>https://github.com/Tarek-Alzein/EcoguardPoller/issues/</Support>
 	<Project>https://github.com/Tarek-Alzein/EcoguardPoller</Project>
 	<Overview>
-		A .NET background service that periodically fetches electricity meter readings from the [b]Ecoguard Curves Integration API[/b] and publishes them to an [b]MQTT broker[/b]. All API credentials, polling intervals, and MQTT settings are configurable below.
+		&#xD;
+		A .NET background service that periodically fetches electricity meter readings from the Ecoguard Curves Integration API and publishes them to an MQTT broker. All API credentials, polling intervals, and MQTT settings are configurable below.&#xD;
 	</Overview>
 	<Category>Cloud:HomeAutomation:</Category>
 	<WebUI/>
@@ -20,108 +20,20 @@
 	<ExtraParams/>
 	<PostArgs/>
 	<CPUset/>
-	<DateInstalled/>
+	<DateInstalled>1752625220</DateInstalled>
 	<DonateText/>
 	<DonateLink/>
-	<Description>
-		A .NET-based poller for EcoGuard energy meters. It periodically fetches cumulative readings, calculates usage deltas, and publishes them to your MQTT broker for integration with Home Assistant or other dashboards.
-	</Description>
-
-	<Networking>
-		<Mode>Bridge</Mode>
-		<Publish/>
-	</Networking>
-
-	<Data>
-		<Volume>
-			<HostDir>/mnt/user/appdata/ecoguard_poller</HostDir>
-			<ContainerDir>/app</ContainerDir>
-			<Mode>rw</Mode>
-		</Volume>
-	</Data>
-
-	<Environment>
-		<Variable>
-			<Value>Production</Value>
-			<Name>DOTNET_ENVIRONMENT</Name>
-			<Target>DOTNET_ENVIRONMENT</Target>
-			<Description>.NET runtime environment (typically Production for Unraid).</Description>
-		</Variable>
-		<Variable>
-			<Value>1</Value>
-			<Name>PollIntervalHours</Name>
-			<Target>PollIntervalHours</Target>
-			<Description>The interval in hours for polling data.</Description>
-		</Variable>
-		<Variable>
-			<Value>DEMO</Value>
-			<Name>EcoGuard:DomainCode</Name>
-			<Target>EcoGuard__DomainCode</Target>
-			<Description>EcoGuard API Domain Code.</Description>
-		</Variable>
-		<Variable>
-			<Value>1234</Value>
-			<Name>EcoGuard:NodeId</Name>
-			<Target>EcoGuard__NodeId</Target>
-			<Description>EcoGuard API Node ID.</Description>
-		</Variable>
-		<Variable>
-			<Value/>
-			<Name>EcoGuard:Username</Name>
-			<Target>EcoGuard__Username</Target>
-			<Description>EcoGuard API Username.</Description>
-		</Variable>
-		<Variable>
-			<Value/>
-			<Name>EcoGuard:Password</Name>
-			<Target>EcoGuard__Password</Target>
-			<Description>EcoGuard API Password.</Description>
-			<Mask>true</Mask>
-		</Variable>
-		<Variable>
-			<Value>localhost</Value>
-			<Name>MQTT:Broker</Name>
-			<Target>MQTT__Broker</Target>
-			<Description>MQTT broker address (e.g., IP address of your Unraid server).</Description>
-		</Variable>
-		<Variable>
-			<Value>1883</Value>
-			<Name>MQTT:Port</Name>
-			<Target>MQTT__Port</Target>
-			<Description>MQTT broker port.</Description>
-		</Variable>
-		<Variable>
-			<Value/>
-			<Name>MQTT:Username</Name>
-			<Target>MQTT__Username</Target>
-			<Description>MQTT Username.</Description>
-		</Variable>
-		<Variable>
-			<Value/>
-			<Name>MQTT:Password</Name>
-			<Target>MQTT__Password</Target>
-			<Description>MQTT Password.</Description>
-			<Mask>true</Mask>
-		</Variable>
-		<Variable>
-			<Value>ecoguard/consumption/hourly</Value>
-			<Name>MQTT:Topic</Name>
-			<Target>MQTT__Topic</Target>
-			<Description>The MQTT topic to publish data to.</Description>
-		</Variable>
-	</Environment>
-
-	<Labels/>
-
-	<!--<Config Name=".NET Environment" Target="DOTNET_ENVIRONMENT" Default="Production" Description=".NET runtime environment (should be Production on Unraid)." Type="Variable" Display="advanced" Required="true" Mask="false"/>-->
-	<Config Name="Poll Interval (Hours)" Target="PollIntervalHours" Default="1" Description="The interval in hours for polling data." Type="Variable" Display="always" Required="true" Mask="false"/>
-	<Config Name="EcoGuard Domain Code" Target="EcoGuard__DomainCode" Default="DEMO" Description="EcoGuard API Domain Code." Type="Variable" Display="always" Required="true" Mask="false"/>
-	<Config Name="EcoGuard Node ID" Target="EcoGuard__NodeId" Default="1234" Description="EcoGuard API Node ID." Type="Variable" Display="always" Required="true" Mask="false"/>
-	<Config Name="EcoGuard Username" Target="EcoGuard__Username" Default="" Description="EcoGuard API Username." Type="Variable" Display="always" Required="false" Mask="false"/>
-	<Config Name="EcoGuard Password" Target="EcoGuard__Password" Default="" Description="EcoGuard API Password." Type="Variable" Display="always" Required="false" Mask="true"/>
-	<Config Name="MQTT Broker" Target="MQTT__Broker" Default="localhost" Description="MQTT broker address (e.g., IP address of your Unraid server)." Type="Variable" Display="always" Required="true" Mask="false"/>
-	<Config Name="MQTT Port" Target="MQTT__Port" Default="1883" Description="MQTT broker port." Type="Variable" Display="always" Required="true" Mask="false"/>
-	<Config Name="MQTT Username" Target="MQTT__Username" Default="" Description="MQTT Username." Type="Variable" Display="always" Required="false" Mask="false"/>
-	<Config Name="MQTT Password" Target="MQTT__Password" Default="" Description="MQTT Password." Type="Password" Display="always" Required="false" Mask="true"/>
-	<Config Name="MQTT Topic" Target="MQTT__Topic" Default="ecoguard/consumption/hourly" Description="The MQTT topic to publish data to." Type="Variable" Display="always" Required="true" Mask="false"/>
+	<Requires/>
+	<Config Name="Poll Interval (Hours)" Target="PollIntervalHours" Default="1" Mode="" Description="The interval in hours for polling data." Type="Variable" Display="always" Required="true" Mask="false">0.028</Config>
+	<Config Name="EcoGuard Domain Code" Target="EcoGuard__DomainCode" Default="DEMO" Mode="" Description="EcoGuard API Domain Code." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+	<Config Name="EcoGuard Node ID" Target="EcoGuard__NodeId" Default="1234" Mode="" Description="EcoGuard API Node ID." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+	<Config Name="EcoGuard Username" Target="EcoGuard__Username" Default="" Mode="" Description="EcoGuard API Username." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+	<Config Name="EcoGuard Password" Target="EcoGuard__Password" Default="" Mode="" Description="EcoGuard API Password." Type="Variable" Display="always" Required="true" Mask="true"></Config>
+	<Config Name="MQTT Broker" Target="MQTT__Broker" Default="localhost" Mode="" Description="MQTT broker address (e.g., IP address of your Unraid server)." Type="Variable" Display="always" Required="true" Mask="false">192.168.0.30</Config>
+	<Config Name="MQTT Port" Target="MQTT__Port" Default="1883" Mode="" Description="MQTT broker port." Type="Variable" Display="always" Required="true" Mask="false">1883</Config>
+	<Config Name="MQTT Username" Target="MQTT__Username" Default="" Mode="" Description="MQTT Username." Type="Variable" Display="always" Required="false" Mask="false"></Config>
+	<Config Name="MQTT Password" Target="MQTT__Password" Default="" Mode="" Description="MQTT Password." Type="Variable" Display="always" Required="false" Mask="true"></Config>
+	<Config Name="MQTT Topic" Target="MQTT__Topic" Default="ecoguard/consumption/hourly" Mode="" Description="The MQTT topic to publish data to." Type="Variable" Display="always" Required="true" Mask="false">ecoguard/consumption/hourly</Config>
+	<Config Name="Data Location" Target="/app" Default="/mnt/user/appdata/ecoguard_poller" Mode="rw" Description="" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/ecoguard_poller</Config>
+	<TailscaleStateDir/>
 </Container>
