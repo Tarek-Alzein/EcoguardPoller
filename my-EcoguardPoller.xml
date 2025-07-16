@@ -34,6 +34,6 @@
 	<Config Name="MQTT Username" Target="MQTT__Username" Default="" Mode="" Description="MQTT Username." Type="Variable" Display="always" Required="false" Mask="false"></Config>
 	<Config Name="MQTT Password" Target="MQTT__Password" Default="" Mode="" Description="MQTT Password." Type="Variable" Display="always" Required="false" Mask="true"></Config>
 	<Config Name="MQTT Topic" Target="MQTT__Topic" Default="ecoguard/consumption/hourly" Mode="" Description="The MQTT topic to publish data to." Type="Variable" Display="always" Required="true" Mask="false">ecoguard/consumption/hourly</Config>
-	<Config Name="Data Location" Target="/app" Default="/mnt/user/appdata/ecoguard_poller" Mode="rw" Description="" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/ecoguard_poller</Config>
+	<Config Name="Data Location" Target="/data" Default="/mnt/user/appdata/ecoguard_poller/database" Mode="rw" Description="Container Path: /data for SQLite database persistence. Maps to a subfolder in your appdata." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/ecoguard_poller/database</Config>
 	<TailscaleStateDir/>
 </Container>

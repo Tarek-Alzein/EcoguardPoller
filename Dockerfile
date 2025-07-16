@@ -25,8 +25,5 @@ COPY --from=build /app/publish .
 # Set default environment (can be overridden at runtime)
 ENV DOTNET_ENVIRONMENT=Production
 
-# Expose default working directory for config + db
-VOLUME ["/app"]
-
 # Default command
 ENTRYPOINT ["dotnet", "EcoguardPoller.dll"]
