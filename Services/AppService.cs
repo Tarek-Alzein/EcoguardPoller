@@ -23,17 +23,17 @@ namespace EcoguardPoller.Services
             _mqtt = mqtt;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             Console.WriteLine("✅ EcoGuard Poller Service started and waiting for polling interval.");
 
-            while (!stoppingToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
                     Console.WriteLine($"🕒 Polling job started at {DateTime.Now}");
 
-                    await RunPollOnceAsync(stoppingToken);
+                    await RunPollOnceAsync(cancellationToken);
 
                     Console.WriteLine($"✅ Polling job completed at {DateTime.Now}");
                 }
@@ -46,7 +46,7 @@ namespace EcoguardPoller.Services
                 Console.WriteLine($"⏳ Sleeping for {_appConfig.PollIntervalHours} hour until next poll...");
                 try
                 {
-                    await Task.Delay(TimeSpan.FromHours(_appConfig.PollIntervalHours), stoppingToken);
+                    await Task.Delay(TimeSpan.FromHours(_appConfig.PollIntervalHours), cancellationToken);
                 }
                 catch (TaskCanceledException)
                 {
@@ -82,17 +82,17 @@ namespace EcoguardPoller.Services
                 {
                     await FetchAndStoreReading(token, start, stoppingToken);
                 }
-                catch (UnauthorizedAccessException)
+                catch (UnauthorizedAccessException) 
                 {
                     Console.WriteLine("❌ Still getting Unauthorized after refreshing token. Giving up this cycle.");
                 }
             }
         }
 
-        private async Task FetchAndStoreReading(string token, int from, CancellationToken stoppingToken)
+        private async Task FetchAndStoreReading(string token, int from, CancellationToken cancellationToken)
         {
             // Get cumulative reading from EcoGuard
-            var cumulative = await _ecoGuard.GetLastValAsync(token, from);
+            var cumulative = await _ecoGuard.GetLastValAsync(token, from, cancellationToken);
             Console.WriteLine($"📈 Current cumulative reading: {cumulative} kWh");
 
             // Load previous reading from SQLite
@@ -102,7 +102,7 @@ namespace EcoguardPoller.Services
             {
                 if (Math.Abs(cumulative - previous.Value) < 0.0001)
                 {
-                    Console.WriteLine("ℹ️ Reading has not changed since last poll. Skipping publish.");
+                    Console.WriteLine("ℹ️ Reading has not changed since last poll.");
                     return;
                 }
 
@@ -110,7 +110,7 @@ namespace EcoguardPoller.Services
                 Console.WriteLine($"✅ Calculated delta for this hour: {delta} kWh");
 
                 // Publish delta to MQTT
-                await _mqtt.PublishConsumptionAsync(delta);
+                await _mqtt.PublishConsumptionAsync(delta, cancellationToken);
             }
             else
             {

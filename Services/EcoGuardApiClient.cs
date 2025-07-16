@@ -1,5 +1,6 @@
 ﻿using EcoguardPoller.Models;
 
+using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -64,7 +65,7 @@ namespace EcoguardPoller.Services
         }
 
 
-        public async Task<double> GetLastValAsync(string token, int from)
+        public async Task<double> GetLastValAsync(string token, int from, CancellationToken cancellationToken)
         {
             var url = $"{BaseUrl}/api/{_config.DomainCode}/data?nodeid={_config.NodeId}&interval=H&utl=ELEC[lastval]&from={from}";
 
@@ -72,7 +73,7 @@ namespace EcoguardPoller.Services
             _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
             _client.DefaultRequestHeaders.Add("x-version", "1");
 
-            var response = await _client.GetAsync(url);
+            var response = await _client.GetAsync(url,cancellationToken);
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
@@ -82,31 +83,12 @@ namespace EcoguardPoller.Services
 
             response.EnsureSuccessStatusCode();
 
-            var data = await response.Content.ReadFromJsonAsync<List<EcoGuardDeviceResult>>();
-            if (data == null || data.Count == 0)
+            var data = await response.Content.ReadFromJsonAsync<List<EcoGuardDeviceResult>>(cancellationToken);
+            var allValues = data?.FirstOrDefault()?.Result.FirstOrDefault()?.Values;
+            if (allValues == null || allValues.Count == 0)
                 throw new Exception("No data returned from EcoGuard API.");
 
-            // Search all Values for matching timestamp
-            var allValues = data
-                .SelectMany(d => d.Result)
-                .Where(f => f.Func.Equals("lastval", StringComparison.OrdinalIgnoreCase))
-                .SelectMany(f => f.Values)
-                .ToList();
-
-            Console.WriteLine($"Found {allValues.Count} values in response.");
-
-            var match = allValues
-                .Where(v => v.Time >= from)
-                .OrderBy(v => v.Time)
-                .FirstOrDefault();
-
-            if (match != null)
-            {
-                Console.WriteLine($"Matched Value: {match.Value} at Time {match.Time}");
-                return match.Value;
-            }
-
-            throw new Exception($"No reading found matching time {from}");
+            return allValues.LastOrDefault()?.Value ?? throw new Exception("No values found in EcoGuard response.");
         }
 
         public static (int from, int to) GetLastHourWindow()
