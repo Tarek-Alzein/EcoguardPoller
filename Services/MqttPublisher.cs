@@ -13,36 +13,46 @@ namespace EcoguardPoller.Services
 
         public MqttPublisher(AppConfig appConfig) => _config = appConfig.MQTT;
 
-        public async Task PublishConsumptionAsync(double consumption)
+        public async Task PublishConsumptionAsync(double consumption, CancellationToken cancellationToken)
         {
-            Console.WriteLine($"🔗 Connecting to MQTT Broker at {_config.Broker}:{_config.Port}...");
-
-            var mqttFactory = new MqttClientFactory();
-            using var mqttClient = mqttFactory.CreateMqttClient();
-            var mqttClientOptions = new MqttClientOptionsBuilder()
-            .WithTcpServer(_config.Broker, _config.Port)
-            .WithCredentials(_config.Username, _config.Password)
-            .Build();
-
-            await mqttClient.ConnectAsync(mqttClientOptions, CancellationToken.None);
-
-            Console.WriteLine("✅ MQTT Connected!");
-
-            var payload = consumption.ToString("F2");
-
-            var message = new MqttApplicationMessage
+            try
             {
-                Topic = _config.Topic,
-                PayloadSegment = Encoding.UTF8.GetBytes(payload),
-                Retain = true,
-                QualityOfServiceLevel = MqttQualityOfServiceLevel.AtMostOnce
-            };
+                Console.WriteLine($"🔗 Connecting to MQTT Broker at {_config.Broker}:{_config.Port}...");
 
-            await mqttClient.PublishAsync(message);
-            Console.WriteLine($"✅ Published {payload} kWh to MQTT topic '{_config.Topic}'");
+                var mqttFactory = new MqttClientFactory();
+                using var mqttClient = mqttFactory.CreateMqttClient();
+                var mqttClientOptions = new MqttClientOptionsBuilder()
+                .WithTcpServer(_config.Broker, _config.Port)
+                .WithCredentials(_config.Username, _config.Password)
+                .WithClientId($"EcoGuardPoller-{Guid.NewGuid()}")
+                .Build();
 
-            await mqttClient.DisconnectAsync();
-            Console.WriteLine("🔌 MQTT Disconnected.");
+                await mqttClient.ConnectAsync(mqttClientOptions, cancellationToken);
+
+                Console.WriteLine("✅ MQTT Connected!");
+
+                var payload = consumption.ToString("F2");
+
+                var message = new MqttApplicationMessage
+                {
+                    Topic = _config.Topic,
+                    PayloadSegment = Encoding.UTF8.GetBytes(payload),
+                    Retain = true,
+                    QualityOfServiceLevel = MqttQualityOfServiceLevel.AtMostOnce
+                };
+
+                await mqttClient.PublishAsync(message, cancellationToken);
+                Console.WriteLine($"✅ Published {payload} kWh to MQTT topic '{_config.Topic}'");
+
+                await mqttClient.DisconnectAsync(cancellationToken: cancellationToken);
+                Console.WriteLine("🔌 MQTT Disconnected.");
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ ERROR during MQTT publish: {ex.GetType().Name} - {ex.Message}");
+                throw; // Re-throw to handle in calling code if needed
+            }
         }
     }
 }
