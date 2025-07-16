@@ -16,7 +16,7 @@ await Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices((context, services) =>
     {
-        var appConfig = context.Configuration.Get<AppConfig>();
+        var appConfig = context.Configuration.Get<AppConfig>() ?? throw new InvalidOperationException("Failed to load application configuration. Ensure appsettings.json is correctly configured.");
 
         services.AddSingleton(appConfig);
         services.AddSingleton<EcoGuardApiClient>();
